@@ -32,12 +32,12 @@ document.addEventListener("DOMContentLoaded", function () {
             modeSlider.classList.add("right");
             body.classList.remove("theme-quick");
             body.classList.add("theme-balanced");
-            textarea.placeholder = "Ali-8, Sara-5, John-7";
+            textarea.placeholder = "John-8, Jane-6, Alex-7";
         } else {
             modeSlider.classList.remove("right");
             body.classList.remove("theme-balanced");
             body.classList.add("theme-quick");
-            textarea.placeholder = "Ali, Sara, John, Fatima";
+            textarea.placeholder = "John Doe, Jane Doe, Alex Smith, Sam Wilson";
         }
     }
 
