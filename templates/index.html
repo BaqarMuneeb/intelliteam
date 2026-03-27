@@ -1,0 +1,190 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IntelliTeam</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="{% if selected_mode == 'balanced' %}theme-balanced{% else %}theme-quick{% endif %}">
+    <div class="page-wrapper">
+        <div class="main-card">
+
+            <header class="hero-section">
+                <div class="hero-brand">
+                    <div class="hero-logo">IT</div>
+                    <div class="hero-text">
+                        <div class="logo-container">
+                            <img src="{{ url_for('static', filename='logo.png') }}" alt="IntelliTeam Logo" class="logo">
+                        </div>
+                        <p class="subtitle">Smart Team Allocation System</p>
+                    </div>
+                </div>
+            </header>
+
+            <hr class="section-divider">
+
+            <form method="POST" action="/" id="teamForm">
+                <section class="form-section">
+
+                    <div class="form-group">
+                        <label for="quick_mode" class="section-label">Select Mode</label>
+
+                        <div class="mode-toggle">
+                            <div class="mode-toggle-inner">
+                                <input
+                                    type="radio"
+                                    id="quick_mode"
+                                    name="mode"
+                                    value="quick"
+                                    {% if selected_mode == "quick" %}checked{% endif %}
+                                >
+                                <label for="quick_mode" class="mode-option">Quick Mode</label>
+
+                                <input
+                                    type="radio"
+                                    id="balanced_mode"
+                                    name="mode"
+                                    value="balanced"
+                                    {% if selected_mode == "balanced" %}checked{% endif %}
+                                >
+                                <label for="balanced_mode" class="mode-option">Balanced Mode</label>
+
+                                <span class="mode-slider {% if selected_mode == 'balanced' %}right{% endif %}"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="names" class="section-label">Enter Names (Comma Separated)</label>
+                        <textarea
+                            id="names"
+                            name="names"
+                            rows="2"
+                            placeholder="{% if selected_mode == 'balanced' %}Ali-8, Sara-5, John-7{% else %}Ali, Sara, John, Fatima{% endif %}"
+                        >{{ old_names }}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="team_count" class="section-label">Number of Teams</label>
+                        <input
+                            id="team_count"
+                            type="number"
+                            name="team_count"
+                            value="{{ old_team_count }}"
+                            min="1"
+                            placeholder="Enter number of teams"
+                        >
+                    </div>
+
+                    <div class="button-row">
+                        <button type="submit" class="primary-btn">
+                            {% if teams %}
+                                Regenerate Teams
+                            {% else %}
+                                Generate Teams
+                            {% endif %}
+                        </button>
+
+                        <a href="/reset" class="secondary-btn">Reset</a>
+                    </div>
+
+                    {% if error_message %}
+                        <div class="error-message">{{ error_message }}</div>
+                    {% endif %}
+                </section>
+            </form>
+
+            {% if teams %}
+                <section class="results-section">
+                    <hr class="section-divider">
+
+                    <div class="stats-grid {% if display_mode == 'balanced' %}stats-grid-balanced{% else %}stats-grid-quick{% endif %}">
+                        <div class="stat-card">
+                            <div class="stat-value">{{ total_participants }}</div>
+                            <div class="stat-label">Total Participants</div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-value">{{ number_of_teams }}</div>
+                            <div class="stat-label">Number of Teams</div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-value">{{ average_team_size }}</div>
+                            <div class="stat-label">Average Team Size</div>
+                        </div>
+
+                        {% if display_mode == "balanced" %}
+                            <div class="stat-card">
+                                <div class="stat-value">{{ average_team_rating }}</div>
+                                <div class="stat-label">Average Team Rating</div>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="export-section">
+                        <div class="export-section-header">
+                            <h2 class="export-heading">Export Output</h2>
+                            <p class="export-subheading">Save or copy your generated team allocation</p>
+                        </div>
+
+                        <div class="export-actions">
+                            <button type="button" class="export-btn" id="copyResultsBtn">Copy to Clipboard</button>
+                            <button type="button" class="export-btn" id="exportCsvBtn">Export CSV</button>
+                            <button type="button" class="export-btn" id="exportPdfBtn">Export PDF</button>
+                        </div>
+                    </div>
+
+                    <div class="generated-header-wrap">
+                        <h2 class="generated-heading">Generated Teams</h2>
+                    </div>
+
+                    <hr class="section-divider">
+
+                    <div class="teams-container">
+                        {% for team in teams %}
+                            <div class="team-card">
+                                <div class="team-card-top">
+                                    <h3 class="team-name">{{ display_team_names[loop.index0] }}</h3>
+                                    <p class="team-member-count">{{ team|length }} Members</p>
+                                </div>
+
+                                <div class="team-meta">
+                                    <div class="captain-badge">Captain: {{ captains[loop.index0] }}</div>
+
+                                    {% if display_mode == "balanced" %}
+                                        <div class="team-skill-pill">Team Rating: {{ team_totals[loop.index0] }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <ol class="member-list">
+                                    {% for member in team %}
+                                        <li class="member-row">
+                                            <span class="member-index">{{ loop.index }}</span>
+
+                                            {% if display_mode == "balanced" %}
+                                                <span class="member-name">{{ member.name }}</span>
+                                                <span class="member-rating-badge">{{ member.skill }}</span>
+                                            {% else %}
+                                                <span class="member-name">{{ member }}</span>
+                                            {% endif %}
+                                        </li>
+                                    {% endfor %}
+                                </ol>
+
+                            </div>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endif %}
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    </body>
+</html>
