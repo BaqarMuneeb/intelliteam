@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,76 +25,121 @@
 
             <hr class="section-divider">
 
-            <form method="POST" action="/" id="teamForm">
-                <section class="form-section">
+            <section class="input-card">
+                <form method="POST" action="/" id="teamForm" enctype="multipart/form-data">
+                    <section class="form-section">
 
-                    <div class="form-group">
-                        <label for="quick_mode" class="section-label">Select Mode</label>
+                        <div class="form-group">
+                            <label for="quick_mode" class="section-label">Select Mode</label>
+                            <div class="mode-toggle">
+                                <div class="mode-toggle-inner">
+                                    <input
+                                        type="radio"
+                                        id="quick_mode"
+                                        name="mode"
+                                        value="quick"
+                                        {% if selected_mode == "quick" %}checked{% endif %}
+                                    >
+                                    <label for="quick_mode" class="mode-option">Quick Mode</label>
 
-                        <div class="mode-toggle">
-                            <div class="mode-toggle-inner">
-                                <input
-                                    type="radio"
-                                    id="quick_mode"
-                                    name="mode"
-                                    value="quick"
-                                    {% if selected_mode == "quick" %}checked{% endif %}
-                                >
-                                <label for="quick_mode" class="mode-option">Quick Mode</label>
+                                    <input
+                                        type="radio"
+                                        id="balanced_mode"
+                                        name="mode"
+                                        value="balanced"
+                                        {% if selected_mode == "balanced" %}checked{% endif %}
+                                    >
+                                    <label for="balanced_mode" class="mode-option">Balanced Mode</label>
 
-                                <input
-                                    type="radio"
-                                    id="balanced_mode"
-                                    name="mode"
-                                    value="balanced"
-                                    {% if selected_mode == "balanced" %}checked{% endif %}
-                                >
-                                <label for="balanced_mode" class="mode-option">Balanced Mode</label>
-
-                                <span class="mode-slider {% if selected_mode == 'balanced' %}right{% endif %}"></span>
+                                    <span class="mode-slider {% if selected_mode == 'balanced' %}right{% endif %}"></span>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="form-group">
-                        <label for="names" class="section-label">Enter Names (Comma Separated)</label>
-                        <textarea
-                            id="names"
-                            name="names"
-                            rows="2"
-                            placeholder="{% if selected_mode == 'balanced' %}Ali-8, Sara-5, John-7{% else %}Ali, Sara, John, Fatima{% endif %}"
-                        >{{ old_names }}</textarea>
-                    </div>
 
-                    <div class="form-group">
-                        <label for="team_count" class="section-label">Number of Teams</label>
-                        <input
-                            id="team_count"
-                            type="number"
-                            name="team_count"
-                            value="{{ old_team_count }}"
-                            min="1"
-                            placeholder="Enter number of teams"
-                        >
-                    </div>
+                        <div class="csv-card">
+                            <div class="csv-card-header">
+                                <h3 class="csv-title">Import from CSV</h3>
+                                <p class="csv-subtitle">Upload a CSV file instead of typing names manually</p>
+                            </div>
 
-                    <div class="button-row">
-                        <button type="submit" class="primary-btn">
-                            {% if teams %}
-                                Regenerate Teams
+                            <div class="csv-upload-row">
+                                <label for="csv_file" class="csv-upload-label">Choose CSV File</label>
+                                <input
+                                    type="file"
+                                    id="csv_file"
+                                    name="csv_file"
+                                    accept=".csv"
+                                    class="csv-file-input"
+                                >
+                                <span id="csvFileName" class="csv-file-name">No file chosen</span>
+                            </div>
+
+                            <div class="csv-sample-actions">
+                                <a href="{{ url_for('download_quick_sample_csv') }}" class="sample-btn">Download Quick Sample CSV</a>
+                                <a href="{{ url_for('download_balanced_sample_csv') }}" class="sample-btn">Download Balanced Sample CSV</a>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="names" class="section-label">Enter Names (Comma Separated)</label>
+                            <textarea
+                                id="names"
+                                name="names"
+                                rows="2"
+                                placeholder="{% if selected_mode == 'balanced' %}Ali-8, Sara-5, John-7{% else %}Ali, Sara, John, Fatima{% endif %}"
+                            >{{ old_names }}</textarea>
+                        </div>
+
+                        <div class="mode-help-box">
+                            {% if selected_mode == "balanced" %}
+                                <p class="mode-help-title">Balanced Mode format</p>
+                                <p class="mode-help-example">Use: Name-Rating, Name-Rating</p>
+                                <p class="mode-help-example">Example: Ali-8, Sara-5, John-7</p>
                             {% else %}
-                                Generate Teams
+                                <p class="mode-help-title">Quick Mode format</p>
+                                <p class="mode-help-example">Use: Name, Name, Name</p>
+                                <p class="mode-help-example">Example: Ali, Sara, John, Fatima</p>
                             {% endif %}
-                        </button>
+                        </div>
 
-                        <a href="/reset" class="secondary-btn">Reset</a>
-                    </div>
+                        <div class="form-group">
+                            <label for="team_count" class="section-label">Number of Teams</label>
+                            <input
+                                id="team_count"
+                                type="number"
+                                name="team_count"
+                                value="{{ old_team_count }}"
+                                min="1"
+                                placeholder="Enter number of teams"
+                            >
+                        </div>
 
-                    {% if error_message %}
-                        <div class="error-message">{{ error_message }}</div>
-                    {% endif %}
-                </section>
-            </form>
+                        <div class="button-row">
+                            <button type="submit" class="primary-btn">
+                                {% if teams %}
+                                    Regenerate Teams
+                                {% else %}
+                                    Generate Teams
+                                {% endif %}
+                            </button>
+                            <a href="/reset" class="secondary-btn">Reset</a>
+                        </div>
+
+                        <div class="team-name-toggle team-name-toggle-bottom">
+                            <label class="toggle-label">
+                                <input type="checkbox" name="use_team_names" {% if use_team_names %}checked{% endif %}>
+                                <span>Use Creative Team Names</span>
+                            </label>
+                        </div>
+
+                        {% if error_message %}
+                            <div class="error-message">{{ error_message }}</div>
+                        {% endif %}
+
+                    </section>
+                </form>
+            </section>
 
             {% if teams %}
                 <section class="results-section">
@@ -146,15 +190,14 @@
 
                     <div class="teams-container">
                         {% for team in teams %}
-                            <div class="team-card">
+                            <div class="team-card team-color-{{ (loop.index0 % 6) + 1 }}">
                                 <div class="team-card-top">
                                     <h3 class="team-name">{{ display_team_names[loop.index0] }}</h3>
-                                    <p class="team-member-count">{{ team|length }} Members</p>
+                                    <p class="team-member-count">{% if team|length == 1 %}1 Member{% else %}{{ team|length }} Members{% endif %}</p>
                                 </div>
 
                                 <div class="team-meta">
                                     <div class="captain-badge">Captain: {{ captains[loop.index0] }}</div>
-
                                     {% if display_mode == "balanced" %}
                                         <div class="team-skill-pill">Team Rating: {{ team_totals[loop.index0] }}</div>
                                     {% endif %}
@@ -174,7 +217,6 @@
                                         </li>
                                     {% endfor %}
                                 </ol>
-
                             </div>
                         {% endfor %}
                     </div>
@@ -189,5 +231,5 @@
 
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="{{ url_for('static', filename='app.js') }}"></script>
-    </body>
+</body>
 </html>

@@ -1,4 +1,3 @@
-
 document.addEventListener("DOMContentLoaded", function () {
     const body = document.body;
     const form = document.getElementById("teamForm");
@@ -7,17 +6,17 @@ document.addEventListener("DOMContentLoaded", function () {
         document.querySelector('button[type="submit"]');
 
     const textarea = document.getElementById("names");
-    const teamCountInput = document.getElementById("team_count");
-
     const quickMode = document.getElementById("quick_mode");
     const balancedMode = document.getElementById("balanced_mode");
     const modeSlider = document.querySelector(".mode-slider");
-
     const generatedHeading = document.querySelector(".generated-heading");
 
     const copyBtn = document.getElementById("copyResultsBtn");
     const csvBtn = document.getElementById("exportCsvBtn");
     const pdfBtn = document.getElementById("exportPdfBtn");
+
+    const csvFileInput = document.getElementById("csv_file");
+    const csvFileName = document.getElementById("csvFileName");
 
     function autoResizeTextarea() {
         if (!textarea) return;
@@ -32,7 +31,7 @@ document.addEventListener("DOMContentLoaded", function () {
             modeSlider.classList.add("right");
             body.classList.remove("theme-quick");
             body.classList.add("theme-balanced");
-            textarea.placeholder = "John-8, Jane-6, Alex-7";
+            textarea.placeholder = "John Doe-8, Jane Doe-5, Alex Smith-7, Sam Wilson-6";
         } else {
             modeSlider.classList.remove("right");
             body.classList.remove("theme-balanced");
@@ -41,19 +40,28 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    function getModeLabel() {
+        if (body.classList.contains("theme-balanced")) {
+            return "Balanced Mode";
+        }
+        return "Quick Mode";
+    }
+
+    function getTeamCards() {
+        return document.querySelectorAll(".team-card");
+    }
+
     function buildExportText() {
-        const title = document.querySelector(".title")?.textContent?.trim() || "IntelliTeam";
         const subtitle = document.querySelector(".subtitle")?.textContent?.trim() || "";
-
         const statCards = document.querySelectorAll(".stat-card");
-        const teamCards = document.querySelectorAll(".team-card");
+        const teamCards = getTeamCards();
 
-        let output = `${title}\n`;
+        let output = "IntelliTeam\n";
         if (subtitle) output += `${subtitle}\n`;
-        output += `\n`;
+        output += `Mode: ${getModeLabel()}\n\n`;
 
         if (statCards.length > 0) {
-            output += `SUMMARY\n`;
+            output += "SUMMARY\n";
             statCards.forEach((card) => {
                 const value = card.querySelector(".stat-value")?.textContent?.trim() || "";
                 const label = card.querySelector(".stat-label")?.textContent?.trim() || "";
@@ -63,10 +71,10 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (teamCards.length > 0) {
-            output += `GENERATED TEAMS\n\n`;
+            output += "GENERATED TEAMS\n\n";
 
-            teamCards.forEach((card) => {
-                const teamName = card.querySelector(".team-name")?.textContent?.trim() || "Team";
+            teamCards.forEach((card, teamIndex) => {
+                const teamName = card.querySelector(".team-name")?.textContent?.trim() || `Team ${teamIndex + 1}`;
                 const memberCount = card.querySelector(".team-member-count")?.textContent?.trim() || "";
                 const captain = card.querySelector(".captain-badge")?.textContent?.trim() || "";
                 const teamRating = card.querySelector(".team-skill-pill")?.textContent?.trim() || "";
@@ -76,10 +84,15 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (captain) output += `${captain}\n`;
                 if (teamRating) output += `${teamRating}\n`;
 
-                const members = card.querySelectorAll(".member-row");
-                members.forEach((member, index) => {
-                    const text = member.textContent.replace(/\s+/g, " ").trim();
-                    output += `${index + 1}. ${text}\n`;
+                const memberRows = card.querySelectorAll(".member-row");
+                memberRows.forEach((row, index) => {
+                    const memberName = row.querySelector(".member-name")?.textContent?.trim() || "";
+                    const memberRating = row.querySelector(".member-rating-badge")?.textContent?.trim() || "";
+                    let line = `${index + 1}. ${memberName}`;
+                    if (memberRating) {
+                        line += ` - Rating: ${memberRating}`;
+                    }
+                    output += `${line}\n`;
                 });
 
                 output += `\n`;
@@ -90,44 +103,57 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function buildExportCSV() {
-        const teamCards = document.querySelectorAll(".team-card");
-        let rows = [["Team Name", "Captain", "Team Rating", "Member Number", "Member Name", "Rating"]];
+        const isBalanced = body.classList.contains("theme-balanced");
+        const teamCards = getTeamCards();
 
-        teamCards.forEach((card) => {
-            const teamName = card.querySelector(".team-name")?.textContent?.trim() || "";
+        if (!teamCards.length) {
+            return "";
+        }
+
+        const rows = [];
+
+        rows.push(["IntelliTeam Export"]);
+        rows.push(["Mode", isBalanced ? "Balanced Mode" : "Quick Mode"]);
+        rows.push([]);
+
+        teamCards.forEach((card, teamIndex) => {
+            const teamName = card.querySelector(".team-name")?.textContent?.trim() || `Team ${teamIndex + 1}`;
+
             const captainText = card.querySelector(".captain-badge")?.textContent?.trim() || "";
+            const captain = captainText.replace("Captain:", "").trim();
+
             const teamRatingText = card.querySelector(".team-skill-pill")?.textContent?.trim() || "";
+            const teamRating = teamRatingText.replace("Team Rating:", "").trim();
 
-            const captain = captainText.replace(/^Captain:\s*/i, "").trim();
-            const teamRating = teamRatingText.replace(/^Team Rating:\s*/i, "").trim();
+            rows.push(["Team Name", teamName]);
+            rows.push(["Captain", captain]);
 
-            const members = card.querySelectorAll(".member-row");
+            if (isBalanced) {
+                rows.push(["Team Rating", teamRating]);
+                rows.push(["Member Number", "Member Name", "Member Rating"]);
+            } else {
+                rows.push(["Member Number", "Member Name"]);
+            }
 
-            members.forEach((member, index) => {
-                const memberNameEl = member.querySelector(".member-name");
-                const memberRatingEl = member.querySelector(".member-rating");
+            const memberRows = card.querySelectorAll(".member-row");
 
-                const memberName = memberNameEl ? memberNameEl.textContent.trim() : member.textContent.trim();
-                const memberRating = memberRatingEl
-                    ? memberRatingEl.textContent.replace(/^Rating:\s*/i, "").trim()
-                    : "";
+            memberRows.forEach((row, index) => {
+                const memberName = row.querySelector(".member-name")?.textContent?.trim() || "";
 
-                rows.push([
-                    teamName,
-                    captain,
-                    teamRating,
-                    index + 1,
-                    memberName,
-                    memberRating
-                ]);
+                if (isBalanced) {
+                    const memberRating = row.querySelector(".member-rating-badge")?.textContent?.trim() || "";
+                    rows.push([index + 1, memberName, memberRating]);
+                } else {
+                    rows.push([index + 1, memberName]);
+                }
             });
+
+            rows.push([]);
         });
 
         return rows
-            .map((row) =>
-                row
-                    .map((cell) => `"${String(cell).replace(/"/g, '""')}"`)
-                    .join(",")
+            .map(row =>
+                row.map(value => `"${String(value ?? "").replace(/"/g, '""')}"`).join(",")
             )
             .join("\n");
     }
@@ -135,8 +161,8 @@ document.addEventListener("DOMContentLoaded", function () {
     function downloadFile(content, filename, type) {
         const blob = new Blob([content], { type });
         const url = URL.createObjectURL(blob);
-
         const link = document.createElement("a");
+
         link.href = url;
         link.download = filename;
         document.body.appendChild(link);
@@ -159,7 +185,29 @@ document.addEventListener("DOMContentLoaded", function () {
         balancedMode.addEventListener("change", updateModeUI);
     }
 
+    const fileInput = document.getElementById("csv_file");
+const fileName = document.getElementById("csvFileName");
+
+if (fileInput && fileName) {
+    fileInput.addEventListener("change", function () {
+        if (fileInput.files.length > 0) {
+            fileName.textContent = "✔ " + fileInput.files[0].name;
+            fileName.style.color = "green";
+        }
+    });
+}
+
     updateModeUI();
+
+    if (csvFileInput && csvFileName) {
+        csvFileInput.addEventListener("change", function () {
+            if (csvFileInput.files.length > 0) {
+                csvFileName.textContent = csvFileInput.files[0].name;
+            } else {
+                csvFileName.textContent = "No file chosen";
+            }
+        });
+    }
 
     if (form && submitButton) {
         form.addEventListener("submit", function () {
@@ -184,8 +232,10 @@ document.addEventListener("DOMContentLoaded", function () {
             try {
                 const exportText = buildExportText();
                 await navigator.clipboard.writeText(exportText);
+
                 const originalText = copyBtn.textContent;
                 copyBtn.textContent = "Copied!";
+
                 setTimeout(() => {
                     copyBtn.textContent = originalText;
                 }, 1200);
@@ -198,7 +248,17 @@ document.addEventListener("DOMContentLoaded", function () {
     if (csvBtn) {
         csvBtn.addEventListener("click", function () {
             const csvContent = buildExportCSV();
-            downloadFile(csvContent, "intelliteam-output.csv", "text/csv;charset=utf-8;");
+
+            if (!csvContent) {
+                alert("No teams available to export.");
+                return;
+            }
+
+            const filename = body.classList.contains("theme-balanced")
+                ? "intelliteam_balanced.csv"
+                : "intelliteam_quick.csv";
+
+            downloadFile(csvContent, filename, "text/csv;charset=utf-8;");
         });
     }
 
@@ -211,7 +271,6 @@ document.addEventListener("DOMContentLoaded", function () {
             const left = 15;
             const right = pageWidth - 15;
             const maxWidth = right - left;
-
             let y = 20;
 
             function addLine(text = "", size = 12, weight = "normal", gap = 8) {
@@ -229,13 +288,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 y += lines.length * gap;
             }
 
-            const title = document.querySelector(".title")?.textContent?.trim() || "IntelliTeam";
             const subtitle = document.querySelector(".subtitle")?.textContent?.trim() || "";
             const statCards = document.querySelectorAll(".stat-card");
-            const teamCards = document.querySelectorAll(".team-card");
+            const teamCards = getTeamCards();
 
-            addLine(title, 22, "bold", 10);
+            addLine("IntelliTeam", 22, "bold", 10);
             if (subtitle) addLine(subtitle, 12, "normal", 8);
+            addLine(`Mode: ${getModeLabel()}`, 11, "normal", 7);
             y += 4;
 
             if (statCards.length > 0) {
